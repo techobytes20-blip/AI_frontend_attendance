@@ -2,7 +2,7 @@
 (function () {
   // Application State
   const state = {
-    baseUrl: process.env.baseUrl,
+    baseUrl: 'https://automation-system-5lz7.onrender.com/api/v1',
     token: localStorage.getItem('tams_jwt_token') || '',
     adminEmail: localStorage.getItem('tams_admin_email') || '',
     activeTab: 'dashboard',
