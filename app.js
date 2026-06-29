@@ -2,7 +2,7 @@
 (function () {
   // Application State
   const state = {
-    baseUrl: 'http://localhost:3000/api/v1',
+    baseUrl: process.env.baseUrl,
     token: localStorage.getItem('tams_jwt_token') || '',
     adminEmail: localStorage.getItem('tams_admin_email') || '',
     activeTab: 'dashboard',
@@ -40,7 +40,7 @@
     setupEventListeners();
     checkBackendHealth();
     renderLogs();
-    
+
     // Check Authentication state
     if (state.token) {
       showDashboard();
@@ -57,7 +57,7 @@
         method: 'OPTIONS',
         headers: { 'Access-Control-Request-Method': 'POST' }
       }).catch(() => null);
-      
+
       // If server responded (or rejected but was reachable), we consider it online
       state.isBackendOnline = true;
       updateConnectionStatus('online');
@@ -68,7 +68,7 @@
       updateConnectionStatus('mock');
       showToast('Offline Mode', 'Backend server offline. Automatically running in Mock Mode.', 'warning');
     }
-    
+
     // Sync settings view controls
     const mockToggle = getEl('#mock-mode-toggle');
     if (mockToggle) mockToggle.checked = state.mockMode;
@@ -99,7 +99,7 @@
 
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
-    
+
     let iconSvg = '';
     if (type === 'success') {
       iconSvg = `<svg class="toast-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
@@ -150,11 +150,11 @@
   function showDashboard() {
     getEl('#auth-view').style.display = 'none';
     getEl('#main-dashboard-view').classList.add('active');
-    
+
     // Set user info
     getEl('#sidebar-user-email').textContent = state.adminEmail || 'Admin';
     getEl('#sidebar-avatar').textContent = (state.adminEmail || 'A')[0].toUpperCase();
-    
+
     // Switch to active tab
     switchTab(state.activeTab);
     updateStats();
@@ -162,7 +162,7 @@
 
   function switchTab(tabId) {
     state.activeTab = tabId;
-    
+
     // Update active nav links
     getAllEl('.nav-item').forEach(item => {
       if (item.getAttribute('data-tab') === tabId) {
@@ -208,7 +208,7 @@
     }
 
     showToast('Loading Scanner', 'Initializing camera libraries, please wait...', 'info');
-    
+
     const script = document.createElement('script');
     script.src = 'https://unpkg.com/html5-qrcode';
     script.onload = () => {
@@ -254,7 +254,7 @@
     // Pagination calculations
     const totalItems = filteredLogs.length;
     const totalPages = Math.max(1, Math.ceil(totalItems / state.dashboardPageSize));
-    
+
     // Clamp current page
     if (state.dashboardPage > totalPages) {
       state.dashboardPage = totalPages;
@@ -295,14 +295,14 @@
     tbody.innerHTML = paginatedLogs.map(log => {
       const badgeClass = log.status === 'success' ? 'badge-success' : (log.status === 'duplicate' ? 'badge-warning' : 'badge-danger');
       const timeStr = new Date(log.timestamp).toLocaleTimeString();
-      
-      const emailPhoneText = (log.studentEmail || log.studentPhone) ? 
+
+      const emailPhoneText = (log.studentEmail || log.studentPhone) ?
         `<div style="font-size: 11px; color: var(--color-text-secondary); margin-top: 2px;">
           ${log.studentEmail ? `<span>${log.studentEmail}</span>` : ''} 
           ${log.studentPhone ? `<span style="margin-left: 8px; color: var(--color-text-muted);">${log.studentPhone}</span>` : ''}
          </div>` : '';
-      
-      const workshopText = log.workshop ? 
+
+      const workshopText = log.workshop ?
         `<div style="font-size: 11px; color: var(--color-yellow); margin-top: 2px;">
           Workshop: ${log.workshop}
          </div>` : '';
@@ -328,7 +328,7 @@
   // ==========================================================================
   // API INTEGRATION AND LOGIC
   // ==========================================================================
-  
+
   // Submit Email to request OTP
   async function handleSendOtp(email) {
     if (!email) {
@@ -340,7 +340,7 @@
     submitBtn.classList.add('btn-disabled');
     submitBtn.textContent = 'Sending OTP...';
 
-    try { 
+    try {
       let otpResponse = null;
       if (state.mockMode) {
         // Simulate OTP API
@@ -352,7 +352,7 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })
         });
-        
+
         if (!response.ok) {
           const errData = await response.json();
           throw new Error(errData.message || 'Failed to send OTP.');
@@ -362,7 +362,7 @@
 
       state.adminEmail = email;
       localStorage.setItem('tams_admin_email', email);
-      
+
       // Auto-fill OTP in Dev/Mock Mode for helper testing
       if (otpResponse.otp) {
         showToast('OTP Received (Dev Mode)', `Your OTP code is: ${otpResponse.otp}`, 'success');
@@ -375,7 +375,7 @@
       // Transition to OTP view
       getEl('#auth-step-email').classList.remove('active');
       getEl('#auth-step-otp').classList.add('active');
-      
+
       // Focus on first OTP digit
       const firstOtpInput = getEl('.otp-input');
       if (firstOtpInput) firstOtpInput.focus();
@@ -446,7 +446,7 @@
   // Scan QR Code API Wrapper
   async function processScan(scannedToken) {
     if (!scannedToken) return;
-    
+
     // Stop scanning temporarily during processing
     const checkpoint = state.activeCheckpoint;
     showToast('Processing Scan', 'Registering attendance at checkpoint...', 'info');
@@ -455,7 +455,7 @@
       let scanResult = null;
       if (state.mockMode) {
         await new Promise(resolve => setTimeout(resolve, 800));
-        
+
         // Mock scan states based on token structure
         if (scannedToken.includes('duplicate')) {
           scanResult = {
@@ -520,7 +520,7 @@
     } catch (err) {
       showToast('Scan Error', err.message, 'error');
       renderScanResult('error', err.message, 'Failed verification', null);
-      
+
       const errorLog = {
         studentName: 'Failed Scan',
         studentEmail: '',
@@ -548,10 +548,10 @@
     if (!card) return;
 
     card.className = 'scan-result-card active';
-    
+
     // Clear icons
     iconContainer.innerHTML = '';
-    
+
     if (status === 'success') {
       card.style.borderColor = 'var(--success-color)';
       iconContainer.className = 'scan-result-status-icon badge-success';
@@ -591,7 +591,7 @@
   async function handleTriggerSync() {
     const eventIdInput = getEl('#sync-event-id');
     const eventId = eventIdInput ? eventIdInput.value : 'TestEvent';
-    
+
     // Console log elements
     const consoleBox = getEl('#sync-console');
     if (consoleBox) consoleBox.textContent = `[${new Date().toLocaleTimeString()}] Triggering sync for event: ${eventId}...\n`;
@@ -602,7 +602,7 @@
 
     // Prepare body
     const bodyData = { eventId };
-    
+
     // Check if we are doing mock synchronization
     const mockCheck = getEl('#sync-mock-toggle');
     if (mockCheck && mockCheck.checked) {
@@ -667,10 +667,10 @@
         renderMockRowsEditor();
         logConsole(consoleBox, `Loaded ${syncResult.syncedRows.length} registration records into builder.\n`);
       }
-      
+
       if (syncResult.testToken) {
         logConsole(consoleBox, `Test QR Token Received: ${syncResult.testToken}\n`);
-        
+
         // Render helper button to auto-copy testToken to manual scanner
         const testTokenDiv = document.createElement('div');
         testTokenDiv.style.marginTop = '12px';
@@ -680,7 +680,7 @@
           </button>
         `;
         consoleBox.appendChild(testTokenDiv);
-        
+
         document.getElementById('btn-quick-scan-test').addEventListener('click', () => {
           // Fill input token and switch tab
           localStorage.setItem('tams_qr_token', syncResult.testToken);
@@ -741,7 +741,7 @@
         }
 
         const selectedCameraId = devices[0].id;
-        
+
         // Start streaming
         if (state.scanner) {
           state.scanner.stop().then(() => startScannerWithDevice(selectedCameraId));
@@ -1083,7 +1083,7 @@
       input.addEventListener('change', (e) => {
         const tr = e.target.closest('tr');
         const index = parseInt(tr.getAttribute('data-index'));
-        
+
         if (e.target.classList.contains('cell-name')) state.mockRows[index].Name = e.target.value;
         if (e.target.classList.contains('cell-email')) state.mockRows[index].Email = e.target.value;
         if (e.target.classList.contains('cell-phone')) state.mockRows[index].Phone = e.target.value;
