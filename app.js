@@ -58,6 +58,10 @@
         headers: { 'Access-Control-Request-Method': 'POST' }
       }).catch(() => null);
 
+      if (!response) {
+        throw new Error('Server unreachable');
+      }
+
       // If server responded (or rejected but was reachable), we consider it online
       state.isBackendOnline = true;
       updateConnectionStatus('online');
