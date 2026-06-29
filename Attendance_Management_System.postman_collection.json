@@ -1,0 +1,235 @@
+{
+  "info": {
+    "_postman_id": "c1a6b0c2-55db-44a6-9be8-f93cc467a421",
+    "name": "Attendance Management System",
+    "description": "Postman Collection for the 2-Day Workshop Attendance Management System API. Features auto-capture of JWT tokens on login and auto-population of QR test tokens during sheet sync testing.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Send OTP",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{admin_email}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/send-otp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "send-otp"
+              ]
+            },
+            "description": "Requests a 6-digit OTP for admin or scanner login. The generated OTP is returned in the API response in development/mock environments for convenience, and sent via email."
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set(\"jwt_token\", jsonData.token);",
+                  "    console.log(\"Saved JWT Token to variables:\", jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"otp\": \"{{otp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Authenticates the admin or scanner using their email and OTP. The returned JWT token is automatically stored in the collection variable `jwt_token` by the test script."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Attendance",
+      "item": [
+        {
+          "name": "Scan QR Code",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{qr_token}}\",\n  \"checkpoint\": \"{{checkpoint}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/attendance/scan",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "attendance",
+                "scan"
+              ]
+            },
+            "description": "Records attendance for a student at a specific checkpoint. Supported checkpoints: `day1`, `day2`, `certificateCollected`.\nRequires collection-level Bearer authentication."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Synchronization",
+      "item": [
+        {
+          "name": "Trigger Sheet Sync",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.testToken) {",
+                  "    pm.collectionVariables.set(\"qr_token\", jsonData.testToken);",
+                  "    console.log(\"Saved testToken to variable qr_token:\", jsonData.testToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"TestEvent\",\n  \"mockRows\": [\n    {\n      \"Name\": \"John Doe\",\n      \"Email\": \"student@example.com\",\n      \"Phone\": \"1234567890\",\n      \"College\": \"Example College\",\n      \"Branch\": \"Computer Science\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/sync/sheet",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "sync",
+                "sheet"
+              ]
+            },
+            "description": "Manually triggers synchronization. \n- Providing `mockRows` allows offline testing with local mock data. This mock registration will automatically output a `testToken` in the response, which is auto-saved to the collection's `qr_token` variable by the test script for immediate testing of the scan endpoint.\n- Omitting `mockRows` triggers the production-level sync with Google Sheets tabs."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "admin_email",
+      "value": "test@gmail.com",
+      "type": "string"
+    },
+    {
+      "key": "otp",
+      "value": "123456",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "qr_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "checkpoint",
+      "value": "day1",
+      "type": "string"
+    }
+  ]
+}

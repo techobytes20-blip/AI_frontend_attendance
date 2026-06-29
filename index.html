@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Management System - Admin Panel</title>
+  <!-- Scoped Styling -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Main Scoped Container (WordPress-Safe) -->
+  <div id="tams-admin-panel">
+    
+    <!-- Toast System -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- ==========================================================================
+         1. AUTHENTICATION VIEW
+         ========================================================================== -->
+    <div id="auth-view" class="auth-container">
+      <div class="auth-card">
+        <div class="auth-logo">
+          <h2><span class="text-red">TAMS</span> <span class="text-yellow">Admin</span></h2>
+          <p>Attendance Management System</p>
+        </div>
+
+        <!-- Step 1: Request OTP -->
+        <div id="auth-step-email" class="auth-step active">
+          <form id="auth-email-form">
+            <div class="form-group">
+              <label class="form-label" for="admin-email-input">Administrator Email</label>
+              <div class="input-wrapper">
+                <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.206" />
+                </svg>
+                <input class="form-input" type="email" id="admin-email-input" placeholder="admin@example.com" required value="test@gmail.com">
+              </div>
+            </div>
+            <button class="btn btn-primary" type="submit" id="btn-send-otp">
+              Send OTP
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </button>
+          </form>
+        </div>
+
+        <!-- Step 2: Verify OTP -->
+        <div id="auth-step-otp" class="auth-step">
+          <div class="otp-help-text" id="otp-help-message">
+            Please enter the 6-digit OTP code sent to your email.
+          </div>
+          <form id="auth-otp-form">
+            <div class="otp-inputs">
+              <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" required>
+              <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" required>
+              <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" required>
+              <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" required>
+              <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" required>
+              <input type="text" class="otp-input" maxlength="1" pattern="[0-9]" required>
+            </div>
+            <button class="btn btn-yellow" type="submit" id="btn-verify-otp">
+              Verify & Login
+              <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.952 11.952 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </button>
+          </form>
+          <button class="auth-switch-back" id="auth-switch-back">Change email address</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================================================
+         2. MAIN DASHBOARD CONTAINER
+         ========================================================================== -->
+    <div id="main-dashboard-view" class="dashboard-container">
+      
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar">
+        <div class="sidebar-wrapper">
+          <div class="sidebar-header">
+            <div class="sidebar-logo">
+              <span class="red">TAMS</span><span class="yellow">.</span>
+            </div>
+            <div class="status-indicator" style="padding: 2px 8px; font-size: 10px;">
+              <span class="status-dot online" id="sidebar-status-dot" style="width: 6px; height: 6px;"></span>
+              Admin Panel
+            </div>
+          </div>
+          
+          <nav class="sidebar-nav">
+            <button class="nav-item active" data-tab="dashboard">
+              <svg class="nav-item-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" />
+              </svg>
+              Overview
+            </button>
+            <button class="nav-item" data-tab="scanner">
+              <svg class="nav-item-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+              </svg>
+              QR Scanner
+            </button>
+            <button class="nav-item" data-tab="sync">
+              <svg class="nav-item-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.2" />
+              </svg>
+              Sheet Sync
+            </button>
+            <button class="nav-item" data-tab="settings">
+              <svg class="nav-item-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Settings
+            </button>
+          </nav>
+        </div>
+
+        <div class="sidebar-footer">
+          <div class="user-badge">
+            <div class="user-avatar" id="sidebar-avatar">A</div>
+            <div class="user-info">
+              <span class="user-name" id="sidebar-user-email">admin@example.com</span>
+              <span class="user-role">System Operator</span>
+            </div>
+          </div>
+          <button class="btn-logout" id="btn-logout">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Sign Out
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Panel Body -->
+      <main class="main-content">
+        
+        <!-- Top Bar Header -->
+        <header class="top-bar">
+          <div class="top-bar-title">
+            <h1 id="top-bar-title-text">Dashboard Overview</h1>
+          </div>
+          <div class="top-bar-actions">
+            <div class="status-indicator">
+              <span id="connection-dot" class="status-dot"></span>
+              <span id="connection-label">Connecting...</span>
+            </div>
+          </div>
+        </header>
+
+        <!-- ==========================================================================
+             2A. DASHBOARD OVERVIEW VIEW
+             ========================================================================== -->
+        <div id="dashboard-pane" class="view-pane active">
+          <!-- Quick Statistics Grid -->
+          <div class="grid-stats">
+            <div class="stat-card card-red">
+              <div class="stat-header">
+                <span class="stat-label">Total Scans</span>
+                <svg class="stat-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                </svg>
+              </div>
+              <div class="stat-value" id="stat-total-scans">0</div>
+              <div class="stat-desc">Cumulative scanner checks completed</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-label">Day 1 Checked</span>
+                <svg class="stat-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div class="stat-value" id="stat-day1-scans">0</div>
+              <div class="stat-desc">Students marked present on Day 1</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-label">Day 2 Checked</span>
+                <svg class="stat-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div class="stat-value" id="stat-day2-scans">0</div>
+              <div class="stat-desc">Students marked present on Day 2</div>
+            </div>
+
+            <div class="stat-card card-red">
+              <div class="stat-header">
+                <span class="stat-label font-bold">Certificates</span>
+                <svg class="stat-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.952 11.952 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <div class="stat-value" id="stat-certificates">0</div>
+              <div class="stat-desc">Eligible workshop certificates issued</div>
+            </div>
+          </div>
+
+          <!-- Recent Scans History Panel -->
+          <div class="panel-card">
+            <div class="panel-title-container" style="margin-bottom: 12px;">
+              <div class="panel-title">Recent Activity Logs</div>
+            </div>
+
+            <!-- Search Bar -->
+            <div style="position: relative; margin-bottom: 16px;">
+              <input type="text" id="dashboard-search-input" class="form-input" placeholder="Search logs by name, email, phone, workshop, token..." style="padding: 10px 14px 10px 38px; font-size: 13px; width: 100%; box-sizing: border-box;">
+              <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--color-text-secondary); pointer-events: none;" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </div>
+
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Student Name</th>
+                    <th>Scanned QR Token</th>
+                    <th>Checkpoint</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="recent-scans-tbody">
+                  <!-- Dynamic JS lines -->
+                </tbody>
+              </table>
+            </div>
+            <!-- Pagination Controls -->
+            <div id="dashboard-pagination" class="pagination-container">
+              <button type="button" class="btn-pagination" id="btn-dashboard-prev" disabled>
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg> Prev
+              </button>
+              <span class="pagination-info" id="dashboard-pagination-info">Page 1 of 1</span>
+              <button type="button" class="btn-pagination" id="btn-dashboard-next" disabled>
+                Next <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==========================================================================
+             2B. QR CODE SCANNER VIEW
+             ========================================================================== -->
+        <div id="scanner-pane" class="view-pane">
+          <div class="scanner-grid">
+            
+            <!-- Live Camera Feed Box -->
+            <div class="scanner-camera-box">
+              <div class="scanner-camera-header">
+                <div style="font-weight: 600; font-size: 14px;">Webcam Video Stream</div>
+                <select id="camera-select" class="scanner-select" style="display: none;">
+                  <!-- Dynamic Cameras -->
+                </select>
+              </div>
+              <div class="camera-view-port">
+                <!-- Html5Qrcode video canvas container -->
+                <div id="qr-video-reader" style="display: none;"></div>
+                
+                <!-- HUD Scan Border overlays -->
+                <div id="scanner-hud" class="scanner-hud" style="display: none;">
+                  <div class="scanner-hud-corners"></div>
+                  <div class="scanner-hud-corners-bottom"></div>
+                  <div class="scanner-laser"></div>
+                </div>
+
+                <div id="camera-placeholder" class="camera-placeholder-text">
+                  <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="color: var(--color-red);">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  <span>Camera library loading... Click to allow browser webcam access.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Configuration & Manual Barcode Input -->
+            <div class="scanner-config-box">
+              
+              <!-- Checkpoint Configuration -->
+              <div class="panel-card" style="margin-bottom: 0;">
+                <h3 class="form-label" style="margin-bottom: 12px;">Active Checkpoint</h3>
+                <div class="form-group">
+                  <select id="checkpoint-select" class="form-input" style="padding: 10px 14px;">
+                    <option value="day1">Day 1 Workshop Attendance</option>
+                    <option value="day2">Day 2 Workshop Attendance</option>
+                    <option value="certificateCollected">Certificate Distribution Desk</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Manual QR Token Input -->
+              <div class="panel-card" style="margin-bottom: 0;">
+                <h3 class="form-label" style="margin-bottom: 12px;">Manual Barcode / Token Entry</h3>
+                <form id="manual-scan-form">
+                  <div class="form-group">
+                    <input type="text" id="manual-token-input" class="form-input" placeholder="Paste student QR token here..." style="padding: 10px 14px;">
+                  </div>
+                  <button type="submit" class="btn btn-primary" style="padding: 10px 14px; font-size: 13px;">
+                    Verify Attendance
+                  </button>
+                </form>
+              </div>
+
+              <!-- Last Scan Result Display Card -->
+              <div id="scan-result-card" class="scan-result-card">
+                <div id="scan-result-icon" class="scan-result-status-icon"></div>
+                <div id="scan-result-title" class="scan-result-title">Scan Result</div>
+                <div id="scan-result-desc" class="scan-result-message">No barcode processed yet in this session.</div>
+                <div id="scan-student-details" class="scan-student-details" style="display: none;">
+                  <!-- Student Card Details -->
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ==========================================================================
+             2C. DATA SYNCHRONIZATION VIEW
+             ========================================================================== -->
+        <div id="sync-pane" class="view-pane">
+          <div class="sync-grid">
+            
+            <!-- Mock Spreadsheet editor -->
+            <div class="panel-card" style="margin-bottom: 0;">
+              <div class="panel-title-container" style="margin-bottom: 12px;">
+                <div>
+                  <div class="panel-title">Mock Registration Data Builder</div>
+                  <div style="font-size: 12px; color: var(--color-text-secondary);">
+                    Use this to test the sheet-to-database registration flow offline.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Search Bar -->
+              <div style="position: relative; margin-bottom: 16px;">
+                <input type="text" id="sync-search-input" class="form-input" placeholder="Search by name, email, phone, workshop, college, topic..." style="padding: 10px 14px 10px 38px; font-size: 13px; width: 100%; box-sizing: border-box;">
+                <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--color-text-secondary); pointer-events: none;" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              </div>
+
+              <div class="mock-rows-editor-container">
+                <table class="mock-rows-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>Workshop</th>
+                      <th>College</th>
+                      <th>Topic</th>
+                      <th style="width: 80px;">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mock-rows-tbody">
+                    <!-- Dynamic Rows Editor -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Pagination Controls -->
+              <div id="sync-pagination" class="pagination-container" style="border-radius: 0; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); margin-bottom: 16px;">
+                <button type="button" class="btn-pagination" id="btn-sync-prev" disabled>
+                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg> Prev
+                </button>
+                <span class="pagination-info" id="sync-pagination-info">Page 1 of 1</span>
+                <button type="button" class="btn-pagination" id="btn-sync-next" disabled>
+                  Next <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                </button>
+              </div>
+
+              <div class="mock-actions-row">
+                <button type="button" class="btn btn-secondary" id="btn-add-mock-row" style="padding: 8px 16px; font-size: 12px; width: auto;">
+                  + Add Row
+                </button>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <input type="checkbox" id="sync-mock-toggle" checked style="cursor: pointer;">
+                  <label for="sync-mock-toggle" style="font-size: 12px; color: var(--color-text-secondary); cursor: pointer;">
+                    Send Mock Rows in API Payload
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sync triggering action card -->
+            <div class="scanner-config-box">
+              <div class="panel-card" style="margin-bottom: 0;">
+                <h3 class="panel-title" style="margin-bottom: 16px;">Trigger Sync Session</h3>
+                <form id="sync-form">
+                  <div class="form-group">
+                    <label class="form-label" for="sync-event-id">Workshop Event ID</label>
+                    <input type="text" id="sync-event-id" class="form-input" value="TestEvent" placeholder="e.g. Day1Workshop" required style="padding: 10px 14px;">
+                  </div>
+                  <button type="submit" id="btn-trigger-sync" class="btn btn-yellow">
+                    Trigger Sheet Sync
+                  </button>
+                </form>
+              </div>
+
+              <div class="panel-card" style="margin-bottom: 0;">
+                <h3 class="form-label" style="margin-bottom: 10px;">Sync Server Console Logs</h3>
+                <div id="sync-console" class="console-box">
+                  Console logs will appear here when you trigger sync...
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ==========================================================================
+             2D. CONFIGURATION SETTINGS VIEW
+             ========================================================================== -->
+        <div id="settings-pane" class="view-pane">
+          <div class="panel-card" style="max-width: 600px;">
+            <div class="panel-title-container">
+              <div class="panel-title">System Settings</div>
+            </div>
+
+            <div class="form-group" style="display: flex; align-items: center; gap: 12px; margin-bottom: 30px;">
+              <input type="checkbox" id="mock-mode-toggle" style="width: 18px; height: 18px; cursor: pointer;">
+              <div>
+                <label for="mock-mode-toggle" style="font-weight: 600; font-size: 14px; cursor: pointer;">Enable Mock Sandbox Mode</label>
+                <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 2px;">
+                  Bypass real server calls and run all operations in the local client database for offline demonstration.
+                </div>
+              </div>
+            </div>
+
+            <button type="button" id="btn-save-settings" class="btn btn-primary" style="width: auto; padding: 10px 24px; font-size: 13px;">
+              Save Settings
+            </button>
+          </div>
+        </div>
+
+      </main>
+
+    </div>
+
+  </div>
+
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
