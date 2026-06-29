@@ -53,12 +53,11 @@
   async function checkBackendHealth() {
     try {
       // Send a quick ping to check if server is reachable
-      const response = await fetch(`${state.baseUrl}/auth/send-otp`, {
-        method: 'OPTIONS',
-        headers: { 'Access-Control-Request-Method': 'POST' }
+      const response = await fetch(`${state.baseUrl}/health`, {
+        method: 'GET'
       }).catch(() => null);
 
-      if (!response) {
+      if (!response || !response.ok) {
         throw new Error('Server unreachable');
       }
 
