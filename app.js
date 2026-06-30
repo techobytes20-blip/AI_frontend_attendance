@@ -2,7 +2,7 @@
 (function () {
   // Application State
   const state = {
-    baseUrl: 'https://automation-system-5lz7.onrender.com/api/v1',
+    baseUrl: 'http://localhost:3000/api/v1',
     token: localStorage.getItem('tams_jwt_token') || '',
     adminEmail: localStorage.getItem('tams_admin_email') || '',
     activeTab: 'dashboard',
@@ -432,11 +432,23 @@
         body: JSON.stringify({ token: scannedToken, checkpoint: checkpoint })
       });
 
+      let scanResult;
       if (!response.ok) {
         const errData = await response.json();
-        throw new Error(errData.message || 'Scan verification failed.');
+        if (response.status === 409) {
+          // Duplicate scan response
+          scanResult = {
+             status: 'duplicate',
+             message: errData.error || errData.message,
+             student: errData.student,
+             workshop: errData.workshop
+          };
+        } else {
+          throw new Error(errData.error || errData.message || 'Scan verification failed.');
+        }
+      } else {
+        scanResult = await response.json();
       }
-      const scanResult = await response.json();
 
       // Process and save log
       const studentName = scanResult.student?.Name || scanResult.student?.name || 'Registered Student';
@@ -462,7 +474,7 @@
       localStorage.setItem('tams_scan_logs', JSON.stringify(state.logs));
 
       // Display scanning visual result card
-      renderScanResult(newLog.status, scanResult.message || 'Scan registered.', newLog.studentName, scanResult.student);
+      renderScanResult(newLog.status, scanResult.message || (newLog.status === 'duplicate' ? 'Already scanned for this checkpoint' : 'Scan registered.'), newLog.studentName, scanResult.student);
       renderLogs();
       updateStats();
 
@@ -596,7 +608,7 @@
   // Fetch synced sheet data
   async function fetchAndRenderSyncedData(sheetName) {
     try {
-      const response = await fetch(`${state.baseUrl}/sync/sheets/${sheetName}`, {
+      const response = await fetch(`${state.baseUrl}/sync/sheets/${sheetName}?t=${Date.now()}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${state.token}`
@@ -676,22 +688,18 @@
     }
 
     tbody.innerHTML = paginatedRows.map((row, index) => {
-      // Generate a mock token if none exists for this row
-      if (!hasQrColumn && !row['Generated QR']) {
-         let emailStr = row.Email || row.email || `student${index}`;
-         // strip spaces or special characters
-         emailStr = emailStr.replace(/[^a-zA-Z0-9]/g, '');
-         row['Generated QR'] = `token_${emailStr}_${Math.floor(Math.random()*1000)}`;
-      }
-
       return `<tr>${displayHeaders.map(h => {
         let val = row[h];
         if (val === undefined || val === null) val = '';
         if (h === 'Generated QR' || h.toLowerCase().includes('qr') || h.toLowerCase().includes('token')) {
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(val)}`;
-            return `<td style="text-align: center;">
-              <img src="${qrUrl}" alt="QR Code" class="clickable-qr" data-token="${val}" style="cursor: pointer; width: 40px; height: 40px; border-radius: 4px; border: 2px solid transparent; transition: border-color 0.2s; background: white; padding: 2px;" title="Click to copy to scanner" onmouseover="this.style.borderColor='var(--color-yellow)'" onmouseout="this.style.borderColor='transparent'">
-            </td>`;
+            if (val) {
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(val)}`;
+                return `<td style="text-align: center;">
+                  <img src="${qrUrl}" alt="QR Code" class="clickable-qr" data-token="${val}" style="cursor: pointer; width: 40px; height: 40px; border-radius: 4px; border: 2px solid transparent; transition: border-color 0.2s; background: white; padding: 2px;" title="Click to copy to scanner" onmouseover="this.style.borderColor='var(--color-yellow)'" onmouseout="this.style.borderColor='transparent'">
+                </td>`;
+            } else {
+                return `<td><span style="color: var(--color-text-muted); font-size: 12px;">Not Synced</span></td>`;
+            }
         }
         return `<td>${val}</td>`;
       }).join('')}</tr>`;
@@ -707,9 +715,9 @@
           const manualInput = getEl('#manual-token-input');
           if (manualInput) {
             manualInput.value = token;
-            manualInput.focus();
-            showToast('Token Copied', 'QR token copied to manual scanner input.', 'info');
           }
+          // Automatically trigger scan to mark attendance
+          processScan(token);
         }
       });
     });
