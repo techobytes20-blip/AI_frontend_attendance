@@ -2,7 +2,7 @@
 (function () {
   // Application State
   const state = {
-    baseUrl: 'https://automation-system-5lz7.onrender.com',
+    baseUrl: 'https://automation-system-5lz7.onrender.com/api/v1',
     token: localStorage.getItem('tams_jwt_token') || '',
     adminEmail: localStorage.getItem('tams_admin_email') || '',
     activeTab: 'dashboard',
@@ -587,8 +587,26 @@
 
       showToast('Sync Succeeded', 'Sheet data sync completed. Fetching data...', 'success');
 
-      // Fetch and display synced data
-      await fetchAndRenderSyncedData(eventId);
+      // Process and display synced data directly from the syncResult
+      const eventRows = (syncResult.syncedRows || []).filter(r => r.Workshop === eventId);
+      
+      if (eventRows.length > 0) {
+        state.syncedRows = eventRows;
+      } else {
+        // Fallback to all rows if filtering left none
+        state.syncedRows = syncResult.syncedRows || [];
+      }
+      
+      if (state.syncedRows.length > 0) {
+        state.syncedHeaders = Object.keys(state.syncedRows[0]);
+      } else {
+        state.syncedHeaders = [];
+      }
+      
+      state.syncPage = 1;
+      renderSyncedData();
+      getEl('#synced-data-container').style.display = 'block';
+      getEl('#synced-data-title').textContent = `Synced Data: ${eventId}`;
 
     } catch (err) {
       logConsole(consoleBox, `[ERROR] Sync failed: ${err.message}\n`);
