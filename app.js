@@ -2,7 +2,7 @@
 (function () {
   // Application State
   const state = {
-    baseUrl: 'http://localhost:3000/api/v1',
+    baseUrl: 'https://automation-system-5lz7.onrender.com',
     token: localStorage.getItem('tams_jwt_token') || '',
     adminEmail: localStorage.getItem('tams_admin_email') || '',
     activeTab: 'dashboard',
@@ -438,10 +438,10 @@
         if (response.status === 409) {
           // Duplicate scan response
           scanResult = {
-             status: 'duplicate',
-             message: errData.error || errData.message,
-             student: errData.student,
-             workshop: errData.workshop
+            status: 'duplicate',
+            message: errData.error || errData.message,
+            student: errData.student,
+            workshop: errData.workshop
           };
         } else {
           throw new Error(errData.error || errData.message || 'Scan verification failed.');
@@ -586,7 +586,7 @@
       }
 
       showToast('Sync Succeeded', 'Sheet data sync completed. Fetching data...', 'success');
-      
+
       // Fetch and display synced data
       await fetchAndRenderSyncedData(eventId);
 
@@ -619,16 +619,16 @@
         const errData = await response.json();
         throw new Error(errData.message || 'Failed to fetch sheet data.');
       }
-      
+
       const data = await response.json();
       state.syncedHeaders = data.headers || [];
       state.syncedRows = data.rows || [];
       state.syncPage = 1;
-      
+
       renderSyncedData();
       getEl('#synced-data-container').style.display = 'block';
       getEl('#synced-data-title').textContent = `Synced Data: ${sheetName}`;
-      
+
     } catch (err) {
       showToast('Data Fetch Error', err.message, 'error');
     }
@@ -654,10 +654,10 @@
     // Update Pagination UI Info & Buttons
     const infoEl = getEl('#sync-pagination-info');
     if (infoEl) infoEl.textContent = `Page ${state.syncPage} of ${totalPages} (${totalItems} rows)`;
-    
+
     const prevBtn = getEl('#btn-sync-prev');
     if (prevBtn) prevBtn.disabled = state.syncPage <= 1;
-    
+
     const nextBtn = getEl('#btn-sync-next');
     if (nextBtn) nextBtn.disabled = state.syncPage >= totalPages;
 
@@ -692,14 +692,14 @@
         let val = row[h];
         if (val === undefined || val === null) val = '';
         if (h === 'Generated QR' || h.toLowerCase().includes('qr') || h.toLowerCase().includes('token')) {
-            if (val) {
-                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(val)}`;
-                return `<td style="text-align: center;">
+          if (val) {
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(val)}`;
+            return `<td style="text-align: center;">
                   <img src="${qrUrl}" alt="QR Code" class="clickable-qr" data-token="${val}" style="cursor: pointer; width: 40px; height: 40px; border-radius: 4px; border: 2px solid transparent; transition: border-color 0.2s; background: white; padding: 2px;" title="Click to copy to scanner" onmouseover="this.style.borderColor='var(--color-yellow)'" onmouseout="this.style.borderColor='transparent'">
                 </td>`;
-            } else {
-                return `<td><span style="color: var(--color-text-muted); font-size: 12px;">Not Synced</span></td>`;
-            }
+          } else {
+            return `<td><span style="color: var(--color-text-muted); font-size: 12px;">Not Synced</span></td>`;
+          }
         }
         return `<td>${val}</td>`;
       }).join('')}</tr>`;
@@ -863,7 +863,7 @@
       item.addEventListener('click', (e) => {
         const tabId = item.getAttribute('data-tab');
         if (tabId) switchTab(tabId);
-        
+
         // Close sidebar on mobile after click
         const sidebar = getEl('.sidebar');
         const sidebarOverlay = getEl('#sidebar-overlay');
