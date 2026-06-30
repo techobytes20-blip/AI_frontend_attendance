@@ -41,13 +41,13 @@
   font-family: var(--font-primary);
   background-color: var(--bg-primary);
   color: var(--color-text-primary);
-  min-height: 100vh;
+  height: 100vh;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow-x: hidden;
+  overflow: hidden;
   box-sizing: border-box;
 }
 
@@ -326,11 +326,32 @@
   display: none;
   flex: 1;
   flex-direction: row;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 #tams-admin-panel .dashboard-container.active {
   display: flex;
+}
+
+#tams-admin-panel .techobytes-logo {
+  max-width: 130px;
+  height: auto;
+  display: block;
+  border-radius: 6px;
+}
+
+#tams-admin-panel .hamburger-menu {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  padding: 4px;
+}
+
+#tams-admin-panel .hamburger-menu:hover {
+  color: var(--color-yellow);
 }
 
 /* Sidebar Styling */
@@ -489,6 +510,7 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  height: 100%;
   position: relative;
 }
 
@@ -1129,37 +1151,48 @@
 
 /* Responsive adjustments */
 @media (max-width: 992px) {
+  #tams-admin-panel .hamburger-menu {
+    display: block;
+  }
+
   #tams-admin-panel .dashboard-container {
-    flex-direction: column;
+    flex-direction: row;
   }
   
   #tams-admin-panel .sidebar {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid var(--border-color);
-    flex-direction: row;
-    height: auto;
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 260px;
+    height: 100vh;
+    border-right: 1px solid var(--border-color);
+    border-bottom: none;
+    z-index: 1000;
+    transition: left var(--transition-normal);
+  }
+
+  #tams-admin-panel .sidebar.open {
+    left: 0;
+  }
+
+  #tams-admin-panel .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 999;
+    backdrop-filter: blur(2px);
+  }
+
+  #tams-admin-panel .sidebar-overlay.open {
+    display: block;
   }
   
   #tams-admin-panel .sidebar-header {
     padding: 16px 20px;
-    border-bottom: none;
-  }
-  
-  #tams-admin-panel .sidebar-nav {
-    flex-direction: row;
-    padding: 12px;
-    gap: 4px;
-    overflow-x: auto;
-  }
-  
-  #tams-admin-panel .nav-item {
-    white-space: nowrap;
-    padding: 8px 12px;
-  }
-  
-  #tams-admin-panel .sidebar-footer {
-    display: none; /* Hide footer avatar on mobile for space */
   }
   
   #tams-admin-panel .scanner-grid,

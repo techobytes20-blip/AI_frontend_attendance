@@ -24,7 +24,9 @@
     dashboardPage: 1,
     dashboardPageSize: 5,
     syncPage: 1,
-    syncPageSize: 5,
+    syncPageSize: 10,
+    syncedHeaders: [],
+    syncedRows: [],
     mockRows: [
       { Name: 'John Doe', Email: 'student@example.com', Phone: '1234567890', College: 'Example College', Topic: 'React Fundamentals', Workshop: 'TestEvent' },
       { Name: 'Jane Smith', Email: 'janesmith@example.com', Phone: '9876543210', College: 'State Tech', Topic: 'Node.js API Design', Workshop: 'TestEvent' }
@@ -66,10 +68,8 @@
       updateConnectionStatus('online');
     } catch (err) {
       state.isBackendOnline = false;
-      // If backend is offline, enable mockMode by default so UI works
-      state.mockMode = true;
-      updateConnectionStatus('mock');
-      showToast('Offline Mode', 'Backend server offline. Automatically running in Mock Mode.', 'warning');
+      updateConnectionStatus('offline');
+      showToast('Offline Mode', 'Backend server offline. Please ensure the server is running.', 'error');
     }
 
     // Sync settings view controls
@@ -193,14 +193,6 @@
       stopScanner();
     }
 
-    if (tabId === 'sync') {
-      renderMockRowsEditor();
-    }
-
-    if (tabId === 'settings') {
-      const mockToggle = getEl('#mock-mode-toggle');
-      if (mockToggle) mockToggle.checked = state.mockMode;
-    }
   }
 
   // Load standard QR code scanner library dynamically
@@ -344,36 +336,22 @@
     submitBtn.textContent = 'Sending OTP...';
 
     try {
-      let otpResponse = null;
-      if (state.mockMode) {
-        // Simulate OTP API
-        await new Promise(resolve => setTimeout(resolve, 800));
-        otpResponse = { message: 'OTP sent successfully to email.', otp: '123456' };
-      } else {
-        const response = await fetch(`${state.baseUrl}/auth/send-otp`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email })
-        });
+      const response = await fetch(`${state.baseUrl}/auth/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
 
-        if (!response.ok) {
-          const errData = await response.json();
-          throw new Error(errData.message || 'Failed to send OTP.');
-        }
-        otpResponse = await response.json();
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.message || 'Failed to send OTP.');
       }
+      const otpResponse = await response.json();
 
       state.adminEmail = email;
       localStorage.setItem('tams_admin_email', email);
 
-      // Auto-fill OTP in Dev/Mock Mode for helper testing
-      if (otpResponse.otp) {
-        showToast('OTP Received (Dev Mode)', `Your OTP code is: ${otpResponse.otp}`, 'success');
-        // Pre-fill the first OTP boxes or alert
-        getEl('#otp-help-message').innerHTML = `OTP sent. In development mode, auto-saved: <span>${otpResponse.otp}</span>`;
-      } else {
-        getEl('#otp-help-message').innerHTML = 'Please check your email for the 6-digit OTP code.';
-      }
+      getEl('#otp-help-message').innerHTML = 'Please check your email for the 6-digit OTP code.';
 
       // Transition to OTP view
       getEl('#auth-step-email').classList.remove('active');
@@ -409,27 +387,17 @@
     submitBtn.textContent = 'Verifying...';
 
     try {
-      let loginData = null;
-      if (state.mockMode) {
-        await new Promise(resolve => setTimeout(resolve, 600));
-        if (otpCode === '123456' || otpCode) {
-          loginData = { token: 'mock-jwt-token-xyz-123456' };
-        } else {
-          throw new Error('Invalid OTP code.');
-        }
-      } else {
-        const response = await fetch(`${state.baseUrl}/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: state.adminEmail, otp: otpCode })
-        });
+      const response = await fetch(`${state.baseUrl}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: state.adminEmail, otp: otpCode })
+      });
 
-        if (!response.ok) {
-          const errData = await response.json();
-          throw new Error(errData.message || 'Invalid OTP code.');
-        }
-        loginData = await response.json();
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.message || 'Invalid OTP code.');
       }
+      const loginData = await response.json();
 
       // Save token state
       state.token = loginData.token;
@@ -455,42 +423,20 @@
     showToast('Processing Scan', 'Registering attendance at checkpoint...', 'info');
 
     try {
-      let scanResult = null;
-      if (state.mockMode) {
-        await new Promise(resolve => setTimeout(resolve, 800));
+      const response = await fetch(`${state.baseUrl}/attendance/scan`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${state.token}`
+        },
+        body: JSON.stringify({ token: scannedToken, checkpoint: checkpoint })
+      });
 
-        // Mock scan states based on token structure
-        if (scannedToken.includes('duplicate')) {
-          scanResult = {
-            status: 'duplicate',
-            message: 'Attendance already checked for this checkpoint.',
-            student: { Name: 'Jane Smith', College: 'State Tech', Email: 'janesmith@example.com', Phone: '9876543210', Workshop: 'TestEvent' }
-          };
-        } else if (scannedToken.includes('invalid')) {
-          throw new Error('Invalid QR Token barcode.');
-        } else {
-          scanResult = {
-            status: 'success',
-            message: 'Attendance marked successfully!',
-            student: { Name: 'John Doe', College: 'Example College', Email: 'student@example.com', Phone: '1234567890', Workshop: 'TestEvent' }
-          };
-        }
-      } else {
-        const response = await fetch(`${state.baseUrl}/attendance/scan`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${state.token}`
-          },
-          body: JSON.stringify({ token: scannedToken, checkpoint: checkpoint })
-        });
-
-        if (!response.ok) {
-          const errData = await response.json();
-          throw new Error(errData.message || 'Scan verification failed.');
-        }
-        scanResult = await response.json();
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.message || 'Scan verification failed.');
       }
+      const scanResult = await response.json();
 
       // Process and save log
       const studentName = scanResult.student?.Name || scanResult.student?.name || 'Registered Student';
@@ -606,99 +552,31 @@
     // Prepare body
     const bodyData = { eventId };
 
-    // Check if we are doing mock synchronization
-    const mockCheck = getEl('#sync-mock-toggle');
-    if (mockCheck && mockCheck.checked) {
-      // Normalize to lowercase keys expected by the backend sheet-sync service
-      bodyData.mockRows = state.mockRows.map(row => ({
-        name: row.Name || '',
-        email: row.Email || '',
-        phone: row.Phone || '',
-        topic: row.Topic || '',
-        college: row.College || ''
-      }));
-      logConsole(consoleBox, `Injecting ${state.mockRows.length} offline testing mock rows.\n`);
-    }
-
     try {
-      let syncResult = null;
-      if (state.mockMode) {
-        await new Promise(resolve => setTimeout(resolve, 1200));
-        syncResult = {
-          message: 'Synchronization processed successfully.',
-          testToken: `mock-qr-token-for-${eventId}-student-${Math.floor(Math.random() * 1000)}`,
-          addedCount: bodyData.mockRows ? bodyData.mockRows.length : 12
-        };
-        if (!bodyData.mockRows) {
-          syncResult.syncedRows = [
-            { Name: 'Alice Green', Email: 'alice@example.com', Phone: '5551234567', College: 'Green University', Topic: 'Machine Learning Basics', Token: 'mock-token-alice' },
-            { Name: 'Bob Brown', Email: 'bob@example.com', Phone: '5557654321', College: 'Brown College', Topic: 'Cloud Computing', Token: 'mock-token-bob-duplicate' },
-            { Name: 'Charlie White', Email: 'charlie@example.com', Phone: '5559998888', College: 'White Academy', Topic: 'Cybersecurity 101', Token: 'mock-token-charlie-invalid' }
-          ];
-        } else {
-          // Map mockRows to include generated mock tokens
-          syncResult.syncedRows = bodyData.mockRows.map((r, i) => ({
-            ...r,
-            Token: `mock-token-${r.Name.toLowerCase().replace(/\s+/g, '-') || 'student'}-${i}`
-          }));
-        }
-      } else {
-        const response = await fetch(`${state.baseUrl}/sync/sheet`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${state.token}`
-          },
-          body: JSON.stringify(bodyData)
-        });
+      const response = await fetch(`${state.baseUrl}/sync/sheet`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${state.token}`
+        },
+        body: JSON.stringify(bodyData)
+      });
 
-        if (!response.ok) {
-          const errData = await response.json();
-          throw new Error(errData.message || 'Synchronization request failed.');
-        }
-        syncResult = await response.json();
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.message || 'Synchronization request failed.');
       }
+      const syncResult = await response.json();
 
       logConsole(consoleBox, `Success! ${syncResult.message}\n`);
       if (syncResult.addedCount !== undefined) {
         logConsole(consoleBox, `Rows Sync Count: ${syncResult.addedCount}\n`);
       }
 
-      if (syncResult.syncedRows && syncResult.syncedRows.length > 0) {
-        state.mockRows = syncResult.syncedRows;
-        state.syncPage = 1;
-        renderMockRowsEditor();
-        logConsole(consoleBox, `Loaded ${syncResult.syncedRows.length} registration records into builder.\n`);
-      }
-
-      if (syncResult.testToken) {
-        logConsole(consoleBox, `Test QR Token Received: ${syncResult.testToken}\n`);
-
-        // Render helper button to auto-copy testToken to manual scanner
-        const testTokenDiv = document.createElement('div');
-        testTokenDiv.style.marginTop = '12px';
-        testTokenDiv.innerHTML = `
-          <button class="btn btn-yellow" id="btn-quick-scan-test" style="padding: 6px 12px; font-size: 12px; width: auto;">
-            Quick Fill Scan Token
-          </button>
-        `;
-        consoleBox.appendChild(testTokenDiv);
-
-        document.getElementById('btn-quick-scan-test').addEventListener('click', () => {
-          // Fill input token and switch tab
-          localStorage.setItem('tams_qr_token', syncResult.testToken);
-          switchTab('scanner');
-          const tokenInput = getEl('#manual-token-input');
-          if (tokenInput) {
-            tokenInput.value = syncResult.testToken;
-            // Highlight it
-            tokenInput.focus();
-            showToast('Token Copied', 'Mock test token filled into scanning field.', 'success');
-          }
-        });
-      }
-
-      showToast('Sync Succeeded', 'Sheet data sync completed.', 'success');
+      showToast('Sync Succeeded', 'Sheet data sync completed. Fetching data...', 'success');
+      
+      // Fetch and display synced data
+      await fetchAndRenderSyncedData(eventId);
 
     } catch (err) {
       logConsole(consoleBox, `[ERROR] Sync failed: ${err.message}\n`);
@@ -713,6 +591,128 @@
     if (!box) return;
     box.appendChild(document.createTextNode(text));
     box.scrollTop = box.scrollHeight;
+  }
+
+  // Fetch synced sheet data
+  async function fetchAndRenderSyncedData(sheetName) {
+    try {
+      const response = await fetch(`${state.baseUrl}/sync/sheets/${sheetName}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${state.token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.message || 'Failed to fetch sheet data.');
+      }
+      
+      const data = await response.json();
+      state.syncedHeaders = data.headers || [];
+      state.syncedRows = data.rows || [];
+      state.syncPage = 1;
+      
+      renderSyncedData();
+      getEl('#synced-data-container').style.display = 'block';
+      getEl('#synced-data-title').textContent = `Synced Data: ${sheetName}`;
+      
+    } catch (err) {
+      showToast('Data Fetch Error', err.message, 'error');
+    }
+  }
+
+  function renderSyncedData() {
+    const thead = getEl('#synced-data-thead');
+    const tbody = getEl('#synced-data-tbody');
+    if (!thead || !tbody) return;
+
+    // Pagination calculations
+    const totalItems = state.syncedRows.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / state.syncPageSize));
+
+    // Clamp current page
+    if (state.syncPage > totalPages) state.syncPage = totalPages;
+    if (state.syncPage < 1) state.syncPage = 1;
+
+    const startIndex = (state.syncPage - 1) * state.syncPageSize;
+    const endIndex = Math.min(startIndex + state.syncPageSize, totalItems);
+    const paginatedRows = state.syncedRows.slice(startIndex, endIndex);
+
+    // Update Pagination UI Info & Buttons
+    const infoEl = getEl('#sync-pagination-info');
+    if (infoEl) infoEl.textContent = `Page ${state.syncPage} of ${totalPages} (${totalItems} rows)`;
+    
+    const prevBtn = getEl('#btn-sync-prev');
+    if (prevBtn) prevBtn.disabled = state.syncPage <= 1;
+    
+    const nextBtn = getEl('#btn-sync-next');
+    if (nextBtn) nextBtn.disabled = state.syncPage >= totalPages;
+
+    // Prepare headers for display, adding QR if missing
+    let displayHeaders = [...state.syncedHeaders];
+    let hasQrColumn = displayHeaders.some(h => h.toLowerCase().includes('qr') || h.toLowerCase().includes('token'));
+    if (!hasQrColumn) {
+      displayHeaders.push('Generated QR');
+    }
+
+    // Render Headers
+    if (displayHeaders.length > 0) {
+      thead.innerHTML = `<tr>${displayHeaders.map(h => `<th>${h}</th>`).join('')}</tr>`;
+    } else {
+      thead.innerHTML = '';
+    }
+
+    // Render Rows
+    if (paginatedRows.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="${Math.max(1, displayHeaders.length)}" style="text-align: center; color: var(--color-text-muted); padding: 30px;">
+            No data available.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = paginatedRows.map((row, index) => {
+      // Generate a mock token if none exists for this row
+      if (!hasQrColumn && !row['Generated QR']) {
+         let emailStr = row.Email || row.email || `student${index}`;
+         // strip spaces or special characters
+         emailStr = emailStr.replace(/[^a-zA-Z0-9]/g, '');
+         row['Generated QR'] = `token_${emailStr}_${Math.floor(Math.random()*1000)}`;
+      }
+
+      return `<tr>${displayHeaders.map(h => {
+        let val = row[h];
+        if (val === undefined || val === null) val = '';
+        if (h === 'Generated QR' || h.toLowerCase().includes('qr') || h.toLowerCase().includes('token')) {
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=${encodeURIComponent(val)}`;
+            return `<td style="text-align: center;">
+              <img src="${qrUrl}" alt="QR Code" class="clickable-qr" data-token="${val}" style="cursor: pointer; width: 40px; height: 40px; border-radius: 4px; border: 2px solid transparent; transition: border-color 0.2s; background: white; padding: 2px;" title="Click to copy to scanner" onmouseover="this.style.borderColor='var(--color-yellow)'" onmouseout="this.style.borderColor='transparent'">
+            </td>`;
+        }
+        return `<td>${val}</td>`;
+      }).join('')}</tr>`;
+    }).join('');
+
+    // Attach click listeners to copied QRs
+    const clickableQrs = document.querySelectorAll('#tams-admin-panel .clickable-qr');
+    clickableQrs.forEach(el => {
+      el.addEventListener('click', (e) => {
+        const token = e.target.getAttribute('data-token');
+        if (token) {
+          switchTab('scanner');
+          const manualInput = getEl('#manual-token-input');
+          if (manualInput) {
+            manualInput.value = token;
+            manualInput.focus();
+            showToast('Token Copied', 'QR token copied to manual scanner input.', 'info');
+          }
+        }
+      });
+    });
   }
 
   // ==========================================================================
@@ -855,8 +855,31 @@
       item.addEventListener('click', (e) => {
         const tabId = item.getAttribute('data-tab');
         if (tabId) switchTab(tabId);
+        
+        // Close sidebar on mobile after click
+        const sidebar = getEl('.sidebar');
+        const sidebarOverlay = getEl('#sidebar-overlay');
+        if (window.innerWidth <= 992 && sidebar && sidebarOverlay) {
+          sidebar.classList.remove('open');
+          sidebarOverlay.classList.remove('open');
+        }
       });
     });
+
+    // Mobile Hamburger Menu
+    const hamburgerMenu = getEl('#hamburger-menu');
+    const sidebar = getEl('.sidebar');
+    const sidebarOverlay = getEl('#sidebar-overlay');
+    if (hamburgerMenu && sidebar && sidebarOverlay) {
+      hamburgerMenu.addEventListener('click', () => {
+        sidebar.classList.add('open');
+        sidebarOverlay.classList.add('open');
+      });
+      sidebarOverlay.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('open');
+      });
+    }
 
     // Dashboard log search event listener
     const dashboardSearchInput = getEl('#dashboard-search-input');
@@ -884,6 +907,25 @@
       btnDashboardNext.addEventListener('click', () => {
         state.dashboardPage++;
         renderLogs();
+      });
+    }
+
+    // Sync Pagination Controls
+    const btnSyncPrev = getEl('#btn-sync-prev');
+    if (btnSyncPrev) {
+      btnSyncPrev.addEventListener('click', () => {
+        if (state.syncPage > 1) {
+          state.syncPage--;
+          renderSyncedData();
+        }
+      });
+    }
+
+    const btnSyncNext = getEl('#btn-sync-next');
+    if (btnSyncNext) {
+      btnSyncNext.addEventListener('click', () => {
+        state.syncPage++;
+        renderSyncedData();
       });
     }
 
@@ -944,183 +986,6 @@
       });
     }
 
-    const addRowBtn = getEl('#btn-add-mock-row');
-    if (addRowBtn) {
-      addRowBtn.addEventListener('click', () => {
-        state.mockRows.push({ Name: '', Email: '', Phone: '', College: '', Topic: '', Workshop: '', Token: '' });
-        // Automatically go to the last page so user can see and fill the new row
-        const totalPages = Math.max(1, Math.ceil(state.mockRows.length / state.syncPageSize));
-        state.syncPage = totalPages;
-        renderMockRowsEditor();
-      });
-    }
-
-    // Search bar event listener
-    const searchInput = getEl('#sync-search-input');
-    if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
-        state.searchQuery = e.target.value;
-        state.syncPage = 1;
-        renderMockRowsEditor();
-      });
-    }
-
-    // Sync Pagination Buttons Click Listeners
-    const btnSyncPrev = getEl('#btn-sync-prev');
-    if (btnSyncPrev) {
-      btnSyncPrev.addEventListener('click', () => {
-        if (state.syncPage > 1) {
-          state.syncPage--;
-          renderMockRowsEditor();
-        }
-      });
-    }
-
-    const btnSyncNext = getEl('#btn-sync-next');
-    if (btnSyncNext) {
-      btnSyncNext.addEventListener('click', () => {
-        state.syncPage++;
-        renderMockRowsEditor();
-      });
-    }
-
-    // 5. Settings Tab Handlers
-    const saveSettingsBtn = getEl('#btn-save-settings');
-    if (saveSettingsBtn) {
-      saveSettingsBtn.addEventListener('click', () => {
-        const mockToggle = getEl('#mock-mode-toggle');
-        if (mockToggle) state.mockMode = mockToggle.checked;
-
-        updateConnectionStatus(state.mockMode ? 'mock' : (state.isBackendOnline ? 'online' : 'offline'));
-        showToast('Settings Saved', 'Configuration updated successfully.', 'success');
-      });
-    }
-  }
-
-  // Render mock rows in spreadsheet-style editor
-  function renderMockRowsEditor() {
-    const tableBody = getEl('#mock-rows-tbody');
-    if (!tableBody) return;
-
-    // Filter rows based on search query
-    const query = (state.searchQuery || '').trim().toLowerCase();
-    const filteredRows = state.mockRows.filter(row => {
-      if (!query) return true;
-      const name = (row.Name || '').toLowerCase();
-      const email = (row.Email || '').toLowerCase();
-      const phone = (row.Phone || '').toLowerCase();
-      const college = (row.College || '').toLowerCase();
-      const topic = (row.Topic || '').toLowerCase();
-      const workshop = (row.Workshop || row.workshop || '').toLowerCase();
-      return name.includes(query) || email.includes(query) || phone.includes(query) || college.includes(query) || topic.includes(query) || workshop.includes(query);
-    });
-
-    // Pagination calculations
-    const totalItems = filteredRows.length;
-    const totalPages = Math.max(1, Math.ceil(totalItems / state.syncPageSize));
-
-    // Clamp current page
-    if (state.syncPage > totalPages) {
-      state.syncPage = totalPages;
-    }
-    if (state.syncPage < 1) {
-      state.syncPage = 1;
-    }
-
-    const startIndex = (state.syncPage - 1) * state.syncPageSize;
-    const endIndex = Math.min(startIndex + state.syncPageSize, totalItems);
-    const paginatedRows = filteredRows.slice(startIndex, endIndex);
-
-    // Update Pagination UI Info & Buttons
-    const infoEl = getEl('#sync-pagination-info');
-    if (infoEl) {
-      infoEl.textContent = `Page ${state.syncPage} of ${totalPages}`;
-    }
-    const prevBtn = getEl('#btn-sync-prev');
-    if (prevBtn) {
-      prevBtn.disabled = state.syncPage <= 1;
-    }
-    const nextBtn = getEl('#btn-sync-next');
-    if (nextBtn) {
-      nextBtn.disabled = state.syncPage >= totalPages;
-    }
-
-    if (paginatedRows.length === 0) {
-      tableBody.innerHTML = `
-        <tr>
-          <td colspan="7" style="text-align: center; color: var(--color-text-muted); padding: 20px;">
-            ${query ? 'No matching rows found.' : 'No mock rows defined. Click \'Add Row\' to insert one.'}
-          </td>
-        </tr>
-      `;
-      return;
-    }
-
-    tableBody.innerHTML = paginatedRows.map((row) => {
-      const originalIndex = state.mockRows.indexOf(row);
-      const rowToken = row.Token || row.token || '';
-      return `
-        <tr data-index="${originalIndex}">
-          <td><input type="text" class="mock-input cell-name" value="${row.Name}" placeholder="John Doe"></td>
-          <td><input type="email" class="mock-input cell-email" value="${row.Email}" placeholder="john@example.com"></td>
-          <td><input type="text" class="mock-input cell-phone" value="${row.Phone}" placeholder="1234567890"></td>
-          <td><input type="text" class="mock-input cell-workshop" value="${row.Workshop || ''}" placeholder="TestEvent"></td>
-          <td><input type="text" class="mock-input cell-college" value="${row.College}" placeholder="City College"></td>
-          <td><input type="text" class="mock-input cell-topic" value="${row.Topic || ''}" placeholder="e.g. React, ML, Cloud"></td>
-          <td>
-            <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
-              ${rowToken ? `
-                <button type="button" class="btn-icon-only btn-scan-row" data-token="${rowToken}" title="Copy Student Token for Scanning" style="border-color: var(--color-yellow-glow); color: var(--color-yellow);">
-                  <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
-                </button>
-              ` : ''}
-              <button type="button" class="btn-icon-only btn-delete-row" data-index="${originalIndex}">&times;</button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join('');
-
-    // Bind event inputs listener to update state in real-time
-    getAllEl('.mock-input').forEach(input => {
-      input.addEventListener('change', (e) => {
-        const tr = e.target.closest('tr');
-        const index = parseInt(tr.getAttribute('data-index'));
-
-        if (e.target.classList.contains('cell-name')) state.mockRows[index].Name = e.target.value;
-        if (e.target.classList.contains('cell-email')) state.mockRows[index].Email = e.target.value;
-        if (e.target.classList.contains('cell-phone')) state.mockRows[index].Phone = e.target.value;
-        if (e.target.classList.contains('cell-workshop')) state.mockRows[index].Workshop = e.target.value;
-        if (e.target.classList.contains('cell-college')) state.mockRows[index].College = e.target.value;
-        if (e.target.classList.contains('cell-topic')) state.mockRows[index].Topic = e.target.value;
-      });
-    });
-
-    // Bind quick scan buttons
-    getAllEl('.btn-scan-row').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const token = btn.closest('button').getAttribute('data-token');
-        if (token) {
-          localStorage.setItem('tams_qr_token', token);
-          switchTab('scanner');
-          const tokenInput = getEl('#manual-token-input');
-          if (tokenInput) {
-            tokenInput.value = token;
-            tokenInput.focus();
-            showToast('Token Copied', 'Student QR token filled into manual scanning field.', 'success');
-          }
-        }
-      });
-    });
-
-    // Bind row delete buttons
-    getAllEl('.btn-delete-row').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const index = parseInt(btn.getAttribute('data-index'));
-        state.mockRows.splice(index, 1);
-        renderMockRowsEditor();
-      });
-    });
   }
 
   // Run initial loading
