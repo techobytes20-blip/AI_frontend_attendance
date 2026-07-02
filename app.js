@@ -194,6 +194,11 @@
       stopScanner();
     }
 
+    if (tabId === 'dashboard') {
+      updateStats();
+      renderLogs();
+    }
+
   }
 
   // Load standard QR code scanner library dynamically
@@ -219,9 +224,21 @@
   // Stats Counters
   function updateStats() {
     const totalScans = state.logs.length;
-    const day1Scans = state.logs.filter(l => l.checkpoint === 'day1' && l.status === 'success').length;
-    const day2Scans = state.logs.filter(l => l.checkpoint === 'day2' && l.status === 'success').length;
-    const certificates = state.logs.filter(l => l.checkpoint === 'certificateCollected' && l.status === 'success').length;
+    const day1Scans = state.logs.filter(l => {
+      const cp = (l.checkpoint || '').toLowerCase();
+      const st = (l.status || '').toLowerCase();
+      return cp === 'day1' && st === 'success';
+    }).length;
+    const day2Scans = state.logs.filter(l => {
+      const cp = (l.checkpoint || '').toLowerCase();
+      const st = (l.status || '').toLowerCase();
+      return cp === 'day2' && st === 'success';
+    }).length;
+    const certificates = state.logs.filter(l => {
+      const cp = (l.checkpoint || '').toLowerCase();
+      const st = (l.status || '').toLowerCase();
+      return cp === 'certificatecollected' && st === 'success';
+    }).length;
 
     // Render Stats to Dashboard Tab
     getEl('#stat-total-scans').textContent = totalScans;
