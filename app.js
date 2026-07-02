@@ -663,8 +663,28 @@
     const tbody = getEl('#synced-data-tbody');
     if (!thead || !tbody) return;
 
-    // Filter by search query if any
+    // Filter out duplicate rows with empty topics if the student has another entry with a valid topic
     let filteredRows = state.syncedRows || [];
+    
+    const emailsWithTopics = new Set();
+    filteredRows.forEach(row => {
+      const email = (row.Email || row.email || '').trim().toLowerCase();
+      const topic = (row.Topic || row.topic || '').trim();
+      if (email && topic) {
+        emailsWithTopics.add(email);
+      }
+    });
+
+    filteredRows = filteredRows.filter(row => {
+      const email = (row.Email || row.email || '').trim().toLowerCase();
+      const topic = (row.Topic || row.topic || '').trim();
+      if (!topic && emailsWithTopics.has(email)) {
+        return false;
+      }
+      return true;
+    });
+
+    // Filter by search query if any
     const query = (state.syncSearchQuery || '').trim().toLowerCase();
     if (query) {
       filteredRows = filteredRows.filter(row => {
