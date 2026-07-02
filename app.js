@@ -25,6 +25,7 @@
     dashboardPageSize: 5,
     syncPage: 1,
     syncPageSize: 10,
+    syncSearchQuery: '',
     syncedHeaders: [],
     syncedRows: [],
     mockRows: [
@@ -604,6 +605,9 @@
       }
       
       state.syncPage = 1;
+      const syncSearchInput = getEl('#sync-search-input');
+      if (syncSearchInput) syncSearchInput.value = '';
+      state.syncSearchQuery = '';
       renderSyncedData();
       getEl('#synced-data-container').style.display = 'block';
       getEl('#synced-data-title').textContent = `Synced Data: ${eventId}`;
@@ -642,7 +646,9 @@
       state.syncedHeaders = data.headers || [];
       state.syncedRows = data.rows || [];
       state.syncPage = 1;
-
+      const syncSearchInput = getEl('#sync-search-input');
+      if (syncSearchInput) syncSearchInput.value = '';
+      state.syncSearchQuery = '';
       renderSyncedData();
       getEl('#synced-data-container').style.display = 'block';
       getEl('#synced-data-title').textContent = `Synced Data: ${sheetName}`;
@@ -657,8 +663,19 @@
     const tbody = getEl('#synced-data-tbody');
     if (!thead || !tbody) return;
 
+    // Filter by search query if any
+    let filteredRows = state.syncedRows || [];
+    const query = (state.syncSearchQuery || '').trim().toLowerCase();
+    if (query) {
+      filteredRows = filteredRows.filter(row => {
+        return Object.values(row).some(val => 
+          String(val).toLowerCase().includes(query)
+        );
+      });
+    }
+
     // Pagination calculations
-    const totalItems = state.syncedRows.length;
+    const totalItems = filteredRows.length;
     const totalPages = Math.max(1, Math.ceil(totalItems / state.syncPageSize));
 
     // Clamp current page
@@ -667,7 +684,7 @@
 
     const startIndex = (state.syncPage - 1) * state.syncPageSize;
     const endIndex = Math.min(startIndex + state.syncPageSize, totalItems);
-    const paginatedRows = state.syncedRows.slice(startIndex, endIndex);
+    const paginatedRows = filteredRows.slice(startIndex, endIndex);
 
     // Update Pagination UI Info & Buttons
     const infoEl = getEl('#sync-pagination-info');
@@ -914,6 +931,16 @@
         state.dashboardSearchQuery = e.target.value;
         state.dashboardPage = 1;
         renderLogs();
+      });
+    }
+
+    // Sync sheet search event listener
+    const syncSearchInput = getEl('#sync-search-input');
+    if (syncSearchInput) {
+      syncSearchInput.addEventListener('input', (e) => {
+        state.syncSearchQuery = e.target.value;
+        state.syncPage = 1;
+        renderSyncedData();
       });
     }
 

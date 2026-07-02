@@ -333,24 +333,19 @@
 
             <!-- Sync triggering action card -->
             <div class="scanner-config-box">
-              <div class="panel-card" style="margin-bottom: 0;">
+              <div id="sync-trigger-card" class="panel-card" style="margin-bottom: 0;">
                 <h3 class="panel-title" style="margin-bottom: 16px;">Trigger Sync Session</h3>
                 <form id="sync-form">
                   <div class="form-group">
                     <label class="form-label" for="sync-event-id">Workshop Event ID</label>
                     <input type="text" id="sync-event-id" class="form-input" value="TestEvent" placeholder="e.g. Day1Workshop" required style="padding: 10px 14px;">
                   </div>
-                  <button type="submit" id="btn-trigger-sync" class="btn btn-yellow">
-                    Trigger Sheet Sync
-                  </button>
+                  <div style="display: flex; justify-content: center; width: 100%;">
+                    <button type="submit" id="btn-trigger-sync" class="btn btn-yellow" style="width: auto;">
+                      Trigger Sheet Sync
+                    </button>
+                  </div>
                 </form>
-              </div>
-
-              <div class="panel-card" style="margin-bottom: 0;">
-                <h3 class="form-label" style="margin-bottom: 10px;">Sync Server Console Logs</h3>
-                <div id="sync-console" class="console-box">
-                  Console logs will appear here when you trigger sync...
-                </div>
               </div>
             </div>
 
@@ -360,6 +355,11 @@
           <div class="panel-card" id="synced-data-container" style="display: none; margin-top: 24px;">
             <div class="panel-title-container" style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
               <div class="panel-title" id="synced-data-title">Synced Data Overview</div>
+            </div>
+            <!-- Search Bar -->
+            <div style="position: relative; margin-bottom: 16px;">
+              <input type="text" id="sync-search-input" class="form-input" placeholder="Search synced data..." style="padding: 10px 14px 10px 38px; font-size: 13px; width: 100%; box-sizing: border-box;">
+              <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--color-text-secondary); pointer-events: none;" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             </div>
             
             <div style="overflow-x: auto; width: 100%;">
