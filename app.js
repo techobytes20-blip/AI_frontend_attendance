@@ -149,6 +149,19 @@
   function showLogin() {
     getEl('#auth-view').style.display = 'flex';
     getEl('#main-dashboard-view').classList.remove('active');
+
+    // Reset login view steps (go back to Step 1: Email Input)
+    const stepEmail = getEl('#auth-step-email');
+    const stepOtp = getEl('#auth-step-otp');
+    if (stepEmail && stepOtp) {
+      stepEmail.classList.add('active');
+      stepOtp.classList.remove('active');
+    }
+
+    // Clear OTP inputs
+    getAllEl('.otp-input').forEach(input => {
+      input.value = '';
+    });
   }
 
   function showDashboard() {
