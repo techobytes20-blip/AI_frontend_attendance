@@ -10,13 +10,13 @@
     isBackendOnline: false,
     mockMode: false,
     logs: JSON.parse(localStorage.getItem('tams_scan_logs')) || [
-      { studentName: 'John Doe', studentEmail: 'student@example.com', studentPhone: '1234567890', workshop: 'React Basics', token: 'token_john_doe_react_basics_123', checkpoint: 'day1', timestamp: new Date(Date.now() - 3600000).toISOString(), status: 'success' },
-      { studentName: 'Jane Smith', studentEmail: 'janesmith@example.com', studentPhone: '9876543210', workshop: 'Node API Design', token: 'token_jane_smith_node_api_456', checkpoint: 'day2', timestamp: new Date(Date.now() - 7200000).toISOString(), status: 'success' },
-      { studentName: 'Failed Scan', studentEmail: '', studentPhone: '', workshop: '', token: 'invalid_token_xyz_789', checkpoint: 'day1', timestamp: new Date(Date.now() - 10800000).toISOString(), status: 'error' },
-      { studentName: 'Alice Johnson', studentEmail: 'alice@example.com', studentPhone: '1112223333', workshop: 'CSS Secrets', token: 'token_alice_css_secrets_101', checkpoint: 'day1', timestamp: new Date(Date.now() - 14400000).toISOString(), status: 'success' },
-      { studentName: 'Bob Vance', studentEmail: 'bob@example.com', studentPhone: '4445556666', workshop: 'Refrigeration', token: 'token_bob_refrigeration_202', checkpoint: 'day2', timestamp: new Date(Date.now() - 18000000).toISOString(), status: 'success' },
-      { studentName: 'Charlie Kelly', studentEmail: 'charlie@example.com', studentPhone: '7778889999', workshop: 'Bird Law', token: 'token_charlie_bird_law_303', checkpoint: 'day1', timestamp: new Date(Date.now() - 21600000).toISOString(), status: 'success' },
-      { studentName: 'Dee Reynolds', studentEmail: 'dee@example.com', studentPhone: '0001112222', workshop: 'Acting 101', token: 'token_dee_acting_404', checkpoint: 'day2', timestamp: new Date(Date.now() - 25200000).toISOString(), status: 'success' }
+      { studentName: 'John Doe', studentEmail: 'student@example.com', studentPhone: '1234567890', workshop: 'React Basics', topic: 'React Hooks & State', token: 'token_john_doe_react_basics_123', checkpoint: 'day1', timestamp: new Date(Date.now() - 3600000).toISOString(), status: 'success' },
+      { studentName: 'Jane Smith', studentEmail: 'janesmith@example.com', studentPhone: '9876543210', workshop: 'Node API Design', topic: 'Express Middleware', token: 'token_jane_smith_node_api_456', checkpoint: 'day2', timestamp: new Date(Date.now() - 7200000).toISOString(), status: 'success' },
+      { studentName: 'Failed Scan', studentEmail: '', studentPhone: '', workshop: '', topic: '', token: 'invalid_token_xyz_789', checkpoint: 'day1', timestamp: new Date(Date.now() - 10800000).toISOString(), status: 'error' },
+      { studentName: 'Alice Johnson', studentEmail: 'alice@example.com', studentPhone: '1112223333', workshop: 'CSS Secrets', topic: 'Flexbox & Grid Layouts', token: 'token_alice_css_secrets_101', checkpoint: 'day1', timestamp: new Date(Date.now() - 14400000).toISOString(), status: 'success' },
+      { studentName: 'Bob Vance', studentEmail: 'bob@example.com', studentPhone: '4445556666', workshop: 'Refrigeration', topic: 'AC Maintenance Basics', token: 'token_bob_refrigeration_202', checkpoint: 'day2', timestamp: new Date(Date.now() - 18000000).toISOString(), status: 'success' },
+      { studentName: 'Charlie Kelly', studentEmail: 'charlie@example.com', studentPhone: '7778889999', workshop: 'Bird Law', topic: 'Pigeon Defense Laws', token: 'token_charlie_bird_law_303', checkpoint: 'day1', timestamp: new Date(Date.now() - 21600000).toISOString(), status: 'success' },
+      { studentName: 'Dee Reynolds', studentEmail: 'dee@example.com', studentPhone: '0001112222', workshop: 'Acting 101', topic: 'Method Acting', token: 'token_dee_acting_404', checkpoint: 'day2', timestamp: new Date(Date.now() - 25200000).toISOString(), status: 'success' }
     ],
     scanner: null,
     searchQuery: '',
@@ -259,9 +259,10 @@
       const email = (log.studentEmail || '').toLowerCase();
       const phone = (log.studentPhone || '').toLowerCase();
       const workshop = (log.workshop || '').toLowerCase();
+      const topic = (log.topic || '').toLowerCase();
       const token = (log.token || '').toLowerCase();
       const checkpoint = (log.checkpoint || '').toLowerCase();
-      return name.includes(query) || email.includes(query) || phone.includes(query) || workshop.includes(query) || token.includes(query) || checkpoint.includes(query);
+      return name.includes(query) || email.includes(query) || phone.includes(query) || workshop.includes(query) || topic.includes(query) || token.includes(query) || checkpoint.includes(query);
     });
 
     // Pagination calculations
@@ -297,7 +298,7 @@
     if (paginatedLogs.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="5" style="text-align: center; color: var(--color-text-muted); padding: 30px;">
+          <td colspan="6" style="text-align: center; color: var(--color-text-muted); padding: 30px;">
             ${query ? 'No matching logs found.' : 'No scans recorded yet. Select \'QR Scanner\' to start recording attendance.'}
           </td>
         </tr>
@@ -325,6 +326,9 @@
           <td>
             <div style="font-weight: 500;">${log.studentName || 'Unknown Student'}</div>
             ${emailPhoneText}
+          </td>
+          <td style="font-size: 13px;">
+            <div style="font-weight: 500;">${log.topic || 'N/A'}</div>
           </td>
           <td>
             <code>${log.token.substring(0, 12)}...</code>
@@ -473,12 +477,14 @@
       const studentEmail = scanResult.student?.Email || scanResult.student?.email || '';
       const studentPhone = scanResult.student?.Phone || scanResult.student?.phone || '';
       const workshop = scanResult.workshop || scanResult.student?.Workshop || scanResult.student?.workshop || 'N/A';
+      const topic = scanResult.topic || scanResult.student?.metadata?.topic || scanResult.student?.metadata?.Topic || scanResult.student?.Topic || scanResult.student?.topic || 'N/A';
 
       const newLog = {
         studentName,
         studentEmail,
         studentPhone,
         workshop,
+        topic,
         token: scannedToken,
         checkpoint: checkpoint,
         timestamp: new Date().toISOString(),
@@ -505,6 +511,7 @@
         studentEmail: '',
         studentPhone: '',
         workshop: '',
+        topic: '',
         token: scannedToken,
         checkpoint: checkpoint,
         timestamp: new Date().toISOString(),
@@ -607,20 +614,20 @@
 
       // Process and display synced data directly from the syncResult
       const eventRows = (syncResult.syncedRows || []).filter(r => r.Workshop === eventId);
-      
+
       if (eventRows.length > 0) {
         state.syncedRows = eventRows;
       } else {
         // Fallback to all rows if filtering left none
         state.syncedRows = syncResult.syncedRows || [];
       }
-      
+
       if (state.syncedRows.length > 0) {
         state.syncedHeaders = Object.keys(state.syncedRows[0]);
       } else {
         state.syncedHeaders = [];
       }
-      
+
       state.syncPage = 1;
       const syncSearchInput = getEl('#sync-search-input');
       if (syncSearchInput) syncSearchInput.value = '';
@@ -682,7 +689,7 @@
 
     // Filter out duplicate rows with empty topics if the student has another entry with a valid topic
     let filteredRows = state.syncedRows || [];
-    
+
     const emailsWithTopics = new Set();
     filteredRows.forEach(row => {
       const email = (row.Email || row.email || '').trim().toLowerCase();
@@ -705,7 +712,7 @@
     const query = (state.syncSearchQuery || '').trim().toLowerCase();
     if (query) {
       filteredRows = filteredRows.filter(row => {
-        return Object.values(row).some(val => 
+        return Object.values(row).some(val =>
           String(val).toLowerCase().includes(query)
         );
       });
@@ -1030,6 +1037,20 @@
         stopScanner();
         showLogin();
         showToast('Logged Out', 'Successfully logged out of the session.', 'info');
+      });
+    }
+
+    // Clear Scan History Logs Click
+    const clearLogsBtn = getEl('#btn-clear-logs');
+    if (clearLogsBtn) {
+      clearLogsBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to clear all local scan activity logs? This will reset the display table.')) {
+          state.logs = [];
+          localStorage.removeItem('tams_scan_logs');
+          renderLogs();
+          updateStats();
+          showToast('Logs Cleared', 'Scan activity logs cleared successfully.', 'info');
+        }
       });
     }
 
