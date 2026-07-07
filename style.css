@@ -1247,7 +1247,27 @@
     padding: 16px 20px;
   }
   
-  #tams-admin-panel .scanner-grid,
+  #tams-admin-panel .scanner-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Make configs side-by-side on tablet/medium screen sizes */
+  #tams-admin-panel .scanner-config-box {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  
+  #tams-admin-panel .scanner-camera-box {
+    min-height: 320px;
+  }
+  
+  #tams-admin-panel .scan-result-card {
+    grid-column: 1 / -1;
+  }
+
   #tams-admin-panel .sync-grid {
     grid-template-columns: 1fr;
   }
@@ -1263,7 +1283,36 @@
   }
   
   #tams-admin-panel .view-pane {
-    padding: 16px;
+    padding: 12px;
+  }
+
+  #tams-admin-panel .scanner-config-box {
+    grid-template-columns: 1fr;
+  }
+  
+  #tams-admin-panel .scanner-camera-box {
+    min-height: 250px;
+    border-radius: 8px;
+  }
+
+  #tams-admin-panel #qr-video-reader {
+    max-height: 260px;
+  }
+
+  #tams-admin-panel .camera-placeholder-text {
+    padding: 24px;
+    font-size: 13px;
+    gap: 8px;
+  }
+
+  #tams-admin-panel .camera-placeholder-text svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  #tams-admin-panel .scanner-hud {
+    width: 160px;
+    height: 160px;
   }
 }
 
