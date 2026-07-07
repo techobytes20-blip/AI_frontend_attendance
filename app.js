@@ -8,6 +8,8 @@
     activeTab: 'dashboard',
     activeCheckpoint: 'day1',
     isBackendOnline: false,
+    lastScannedToken: '',
+    lastScannedTime: 0,
     mockMode: false,
     logs: JSON.parse(localStorage.getItem('tams_scan_logs')) || [
       { studentName: 'John Doe', studentEmail: 'student@example.com', studentPhone: '1234567890', workshop: 'React Basics', topic: 'React Hooks & State', token: 'token_john_doe_react_basics_123', checkpoint: 'day1', timestamp: new Date(Date.now() - 3600000).toISOString(), status: 'success' },
@@ -450,8 +452,18 @@
   }
 
   // Scan QR Code API Wrapper
-  async function processScan(scannedToken) {
+  async function processScan(scannedToken, isManual = false) {
     if (!scannedToken) return;
+
+    // Prevent duplicate scan of the same token within a 5-second window (camera scans only)
+    if (!isManual) {
+      const now = Date.now();
+      if (scannedToken === state.lastScannedToken && (now - state.lastScannedTime) < 5000) {
+        return;
+      }
+      state.lastScannedToken = scannedToken;
+      state.lastScannedTime = now;
+    }
 
     // Stop scanning temporarily during processing
     const checkpoint = state.activeCheckpoint;
@@ -809,7 +821,7 @@
             manualInput.value = token;
           }
           // Automatically trigger scan to mark attendance
-          processScan(token);
+          processScan(token, true);
         }
       });
     });
@@ -873,7 +885,7 @@
       },
       qrCodeMessage => {
         // Trigger scan processor
-        processScan(qrCodeMessage);
+        processScan(qrCodeMessage, false);
       },
       errorMessage => {
         // Verbose error logging omitted for performance
@@ -1083,7 +1095,7 @@
         e.preventDefault();
         const tokenInput = getEl('#manual-token-input');
         if (tokenInput && tokenInput.value) {
-          processScan(tokenInput.value);
+          processScan(tokenInput.value, true);
           tokenInput.value = '';
         } else {
           showToast('Validation Error', 'Please enter a valid QR token barcode.', 'error');
