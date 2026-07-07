@@ -1361,3 +1361,99 @@
   font-size: 13px;
   color: var(--color-text-secondary);
 }
+
+/* Hide the default scan region box and borders created by html5-qrcode */
+#tams-admin-panel #qr-video-reader__scan_region,
+#tams-admin-panel [id$="__scan_region"] {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Scan Result Popup Modal styling */
+#tams-admin-panel .scan-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: tamsFadeIn 0.25s ease-out forwards;
+}
+
+#tams-admin-panel .scan-modal-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 400px;
+  padding: 32px 24px;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  animation: tamsScaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+#tams-admin-panel .scan-modal-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 18px;
+  font-size: 28px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  line-height: 1;
+  transition: var(--transition-fast);
+}
+
+#tams-admin-panel .scan-modal-close-btn:hover {
+  color: var(--color-text-primary);
+}
+
+#tams-admin-panel .scan-modal-icon-container {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px auto;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+#tams-admin-panel .scan-modal-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+#tams-admin-panel .scan-modal-message {
+  font-size: 15px;
+  color: var(--color-text-secondary);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+#tams-admin-panel .scan-modal-details-box {
+  background-color: var(--bg-secondary);
+  border-left: 4px solid var(--color-yellow);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: left;
+  font-size: 14px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--color-text-primary);
+}
+
+@keyframes tamsFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

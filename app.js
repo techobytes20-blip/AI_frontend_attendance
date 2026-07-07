@@ -10,6 +10,7 @@
     isBackendOnline: false,
     lastScannedToken: '',
     lastScannedTime: 0,
+    scanModalTimer: null,
     mockMode: false,
     logs: JSON.parse(localStorage.getItem('tams_scan_logs')) || [
       { studentName: 'John Doe', studentEmail: 'student@example.com', studentPhone: '1234567890', workshop: 'React Basics', topic: 'React Hooks & State', token: 'token_john_doe_react_basics_123', checkpoint: 'day1', timestamp: new Date(Date.now() - 3600000).toISOString(), status: 'success' },
@@ -596,6 +597,59 @@
     } else {
       details.style.display = 'none';
     }
+
+    // Populate and Show Popup Modal (Mobile/Quick Feedback Overlay)
+    const modal = getEl('#scan-popup-modal');
+    const modalIcon = getEl('#scan-modal-icon');
+    const modalTitle = getEl('#scan-modal-title');
+    const modalMessage = getEl('#scan-modal-message');
+    const modalDetails = getEl('#scan-modal-details');
+
+    if (modal && modalIcon && modalTitle && modalMessage && modalDetails) {
+      modal.style.display = 'flex';
+      modalIcon.innerHTML = '';
+
+      if (status === 'success') {
+        modalIcon.className = 'scan-modal-icon-container badge-success';
+        modalIcon.innerHTML = `<svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" style="color: var(--success-color);"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>`;
+        modalTitle.textContent = 'Scan Success';
+        modalTitle.style.color = 'var(--success-color)';
+        modalDetails.style.borderLeftColor = 'var(--success-color)';
+      } else if (status === 'duplicate') {
+        modalIcon.className = 'scan-modal-icon-container badge-warning';
+        modalIcon.innerHTML = `<svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color: var(--color-yellow);"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>`;
+        modalTitle.textContent = 'Duplicate Scan';
+        modalTitle.style.color = 'var(--color-yellow)';
+        modalDetails.style.borderLeftColor = 'var(--color-yellow)';
+      } else {
+        modalIcon.className = 'scan-modal-icon-container badge-danger';
+        modalIcon.innerHTML = `<svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color: var(--color-red);"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>`;
+        modalTitle.textContent = 'Scan Failed';
+        modalTitle.style.color = 'var(--color-red)';
+        modalDetails.style.borderLeftColor = 'var(--color-red)';
+      }
+
+      modalMessage.textContent = message;
+
+      if (student) {
+        modalDetails.style.display = 'flex';
+        modalDetails.innerHTML = `
+          <div><strong>Name:</strong> ${name}</div>
+          <div><strong>Email:</strong> ${student.Email || student.email || 'N/A'}</div>
+          <div><strong>College:</strong> ${student.College || student.college || 'N/A'}</div>
+        `;
+      } else {
+        modalDetails.style.display = 'none';
+      }
+
+      // Auto-dismiss modal after 3 seconds
+      if (state.scanModalTimer) {
+        clearTimeout(state.scanModalTimer);
+      }
+      state.scanModalTimer = setTimeout(() => {
+        modal.style.display = 'none';
+      }, 3000);
+    }
   }
 
   // Trigger Google Sheet Synchronization
@@ -1085,6 +1139,27 @@
       checkpointSelect.addEventListener('change', (e) => {
         state.activeCheckpoint = e.target.value;
         showToast('Checkpoint Changed', `Active checkpoint set to ${state.activeCheckpoint}`, 'success');
+      });
+    }
+
+    // Close Scan Result Popup Modal
+    const modal = getEl('#scan-popup-modal');
+    const modalClose = getEl('#scan-modal-close');
+    const modalOkBtn = getEl('#scan-modal-ok-btn');
+
+    const closeModal = () => {
+      if (modal) modal.style.display = 'none';
+      if (state.scanModalTimer) {
+        clearTimeout(state.scanModalTimer);
+        state.scanModalTimer = null;
+      }
+    };
+
+    if (modalClose) modalClose.addEventListener('click', closeModal);
+    if (modalOkBtn) modalOkBtn.addEventListener('click', closeModal);
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
       });
     }
 
