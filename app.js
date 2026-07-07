@@ -2,13 +2,12 @@
 (function () {
   // Application State
   const state = {
-    baseUrl: 'http://localhost:3000/api/v1',
+    baseUrl: 'https://automation-system-5lz7.onrender.com/api/v1',
     token: localStorage.getItem('tams_jwt_token') || '',
     adminEmail: localStorage.getItem('tams_admin_email') || '',
     activeTab: 'dashboard',
     activeCheckpoint: 'day1',
     isBackendOnline: false,
-    isProcessingScan: false,
     mockMode: false,
     logs: JSON.parse(localStorage.getItem('tams_scan_logs')) || [
       { studentName: 'John Doe', studentEmail: 'student@example.com', studentPhone: '1234567890', workshop: 'React Basics', topic: 'React Hooks & State', token: 'token_john_doe_react_basics_123', checkpoint: 'day1', timestamp: new Date(Date.now() - 3600000).toISOString(), status: 'success' },
@@ -451,11 +450,8 @@
   }
 
   // Scan QR Code API Wrapper
-  async function processScan(scannedToken, isManual = false) {
+  async function processScan(scannedToken) {
     if (!scannedToken) return;
-
-    if (state.isProcessingScan) return;
-    state.isProcessingScan = true;
 
     // Stop scanning temporarily during processing
     const checkpoint = state.activeCheckpoint;
@@ -538,15 +534,6 @@
       state.dashboardPage = 1;
       localStorage.setItem('tams_scan_logs', JSON.stringify(state.logs));
       renderLogs();
-    } finally {
-      if (isManual) {
-        state.isProcessingScan = false;
-      } else {
-        // Cooldown of 3 seconds for camera scans to prevent double scan triggers
-        setTimeout(() => {
-          state.isProcessingScan = false;
-        }, 3000);
-      }
     }
   }
 
@@ -822,7 +809,7 @@
             manualInput.value = token;
           }
           // Automatically trigger scan to mark attendance
-          processScan(token, true);
+          processScan(token);
         }
       });
     });
@@ -886,7 +873,7 @@
       },
       qrCodeMessage => {
         // Trigger scan processor
-        processScan(qrCodeMessage, false);
+        processScan(qrCodeMessage);
       },
       errorMessage => {
         // Verbose error logging omitted for performance
@@ -1096,7 +1083,7 @@
         e.preventDefault();
         const tokenInput = getEl('#manual-token-input');
         if (tokenInput && tokenInput.value) {
-          processScan(tokenInput.value, true);
+          processScan(tokenInput.value);
           tokenInput.value = '';
         } else {
           showToast('Validation Error', 'Please enter a valid QR token barcode.', 'error');
